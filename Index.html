@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ODS 2030: Parkour 8-Bits</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+  }
+
+  body {
+    background-color: #0d0e15;
+    color: #f4f4f8;
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  #game-wrapper {
+    position: relative;
+    width: 960px;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 4px solid #ffffff;
+    box-shadow: 0 0 0 4px #1a1c2c, 0 12px 35px rgba(0, 0, 0, 0.85);
+    background: #1a1c2c;
+    image-rendering: pixelated;
+    overflow: hidden;
+  }
+
+  canvas#gameCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  .overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(13, 14, 21, 0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  h1 {
+    font-size: clamp(16px, 2.6vw, 28px);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #fcc30b;
+    text-shadow: 3px 3px 0px #e5243b, -2px -2px 0px #0a97d9;
+    margin-bottom: 14px;
+    line-height: 1.35;
+  }
+
+  .subtitle {
+    font-size: clamp(8px, 1.15vw, 11px);
+    color: #cbd5e1;
+    margin-bottom: 18px;
+    max-width: 720px;
+    line-height: 1.7;
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+
+  .retro-btn {
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    font-size: clamp(8px, 1.1vw, 11px);
+    padding: 11px 16px;
+    border: 3px solid #ffffff;
+    background: #26bde2;
+    color: #0d0e15;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 4px 4px 0px #000000;
+    transition: transform 0.06s;
+  }
+
+  .retro-btn:hover {
+    background: #fcc30b;
+    transform: translate(-1px, -1px);
+  }
+
+  .retro-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #000000;
+  }
+
+  .retro-btn.primary {
+    background: #56c02b;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .retro-btn.primary:hover {
+    background: #fcc30b;
+    color: #0d0e15;
+    text-shadow: none;
+  }
+
+  .retro-btn.secondary {
+    background: #334155;
+    color: #ffffff;
+  }
+
+  .retro-btn.secondary:hover {
+    background: #475569;
+  }
+
+  .controls-box {
+    background: #1e293b;
+    border: 2px solid #64748b;
+    padding: 10px 14px;
+    font-size: clamp(7px, 1vw, 9px);
+    color: #e2e8f0;
+    line-height: 1.9;
+  }
+
+  .key-badge {
+    display: inline-block;
+    background: #0f172a;
+    border: 1px solid #94a3b8;
+    padding: 2px 5px;
+    color: #fcc30b;
+  }
+
+  /* Grid selector de los 17 ODS */
+  #level-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
+    gap: 8px;
+    width: 100%;
+    max-width: 880px;
+    max-height: 68%;
+    overflow-y: auto;
+    padding: 6px;
+    margin-bottom: 12px;
+  }
+
+  .lvl-card {
+    position: relative;
+    border: 3px solid #ffffff;
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 92px;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 #000;
+    transition: transform 0.08s;
+  }
+
+  .lvl-card:hover {
+    transform: translateY(-2px);
+    border-color: #ffea00;
+  }
+
+  .lvl-num {
+    font-size: 14px;
+    color: #ffffff;
+    text-shadow: 2px 2px 0 #000;
+    margin-bottom: 4px;
+  }
+
+  .lvl-name {
+    font-size: 7px;
+    line-height: 1.35;
+    color: #ffffff;
+    text-shadow: 1px 1px 0 #000;
+    text-align: center;
+  }
+
+  .lvl-star {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    font-size: 9px;
+    color: #ffea00;
+    text-shadow: 1px 1px 0 #000;
+  }
+
+  .lvl-info-btn {
+    margin-top: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 6px;
+    padding: 4px 6px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #ffea00;
+    border: 1px solid #fff;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+
+  .lvl-info-btn:hover {
+    background: #fff;
+    color: #000;
+  }
+
+  /* Modal Educativo 8-Bits */
+  .edu-card {
+    background: #141424;
+    border: 4px solid #fff;
+    box-shadow: 0 0 0 4px #000, 0 10px 30px rgba(0, 0, 0, 0.9);
+    border-radius: 6px;
+    width: 100%;
+    max-width: 780px;
+    max-height: 90%;
+    overflow-y: auto;
+    padding: 14px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .edu-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border: 3px solid #fff;
+    border-radius: 4px;
+  }
+
+  .edu-icon-box {
+    width: 48px;
+    height: 48px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .edu-section {
+    background: #1d1d33;
+    border: 2px solid #3c3c66;
+    padding: 8px 10px;
+    border-radius: 4px;
+  }
+
+  .edu-section-title {
+    font-size: 8px;
+    color: #ffea00;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+
+  .edu-section-text {
+    font-size: 8px;
+    line-height: 1.6;
+    color: #e8e8f5;
+    margin: 0;
+  }
+
+  .edu-actions-list {
+    margin: 0;
+    padding-left: 14px;
+    font-size: 8px;
+    line-height: 1.6;
+    color: #b8f2ff;
+  }
+
+  .edu-actions-list li {
+    margin-bottom: 3px;
+  }
+
+  /* Barra de controles inferior y táctil */
+  #controls-bar {
+    width: 960px;
+    max-width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: #1a1c2c;
+    border: 2px solid #475569;
+  }
+
+  .key-hints {
+    font-size: 7px;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+
+  .bar-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .bar-actions button {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    padding: 6px 9px;
+    background: #334155;
+    color: #fff;
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+
+  .bar-actions button:hover {
+    background: #fcc30b;
+    color: #000;
+  }
+
+  /* Controles táctiles para móvil/tablet */
+  #touch-controls {
+    display: none;
+    width: 100%;
+    max-width: 960px;
+    justify-content: space-between;
+    margin-top: 8px;
+    gap: 10px;
+  }
+
+  .touch-group {
+    display: flex;
+    gap: 8px;
+  }
+
+  .touch-btn {
+    width: 54px;
+    height: 54px;
+    background: rgba(51, 65, 85, 0.9);
+    border: 3px solid #fff;
+    color: #fff;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @media (max-width: 768px) {
+    #touch-controls {
+      display: flex;
+    }
+    .key-hints {
+      display: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+  <div id="game-wrapper">
+    <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+    <!-- Pantalla de Inicio -->
+    <div id="start-screen" class="overlay">
+      <h1>ODS 2030: PARKOUR 8-BITS</h1>
+      <p class="subtitle">
+        Supera los <strong>17 Objetivos de Desarrollo Sostenible</strong> de la Agenda 2030. Al completar cada nivel desbloquearás información clave y acciones para cambiar el mundo.
+      </p>
+      <div class="btn-group">
+        <button class="retro-btn primary" onclick="startGame(0)">► JUGAR DESDE ODS 1</button>
+        <button class="retro-btn secondary" onclick="showLevelSelect()">SELECCIONAR ODS (1-17)</button>
+      </div>
+      <div class="controls-box">
+        <div><span class="key-badge">A/D</span> o <span class="key-badge">◄/►</span> Moverse • <span class="key-badge">W</span> / <span class="key-badge">ESPACIO</span> Saltar (x2 Doble Salto)</div>
+        <div><span class="key-badge">SHIFT</span> / <span class="key-badge">K</span> Dash • Salta junto a muros para <strong>Wall-Jump</strong></div>
+      </div>
+    </div>
+
+    <!-- Selector de Niveles -->
+    <div id="level-select-screen" class="overlay hidden">
+      <h2 style="font-size: 13px; margin-bottom: 10px; color: #ffea00;">SELECCIONA UN OBJETIVO (ODS)</h2>
+      <div id="level-grid"></div>
+      <button class="retro-btn" onclick="showStartScreen()">VOLVER AL INICIO</button>
+    </div>
+
+    <!-- Pantalla de Nivel Completado / Modal Educativo -->
+    <div id="level-complete-screen" class="overlay hidden">
+      <div class="edu-card" id="edu-card-box">
+        <div class="edu-header" id="edu-header-box">
+          <div class="edu-icon-box">
+            <canvas id="odsIconCanvas" width="32" height="32" style="width:36px;height:36px;"></canvas>
+          </div>
+          <div style="flex:1;">
+            <div id="complete-badge" style="font-size: 8px; color: #ffea00; margin-bottom: 4px;">ODS 1 COMPLETADO</div>
+            <h2 id="complete-title" style="font-size: clamp(10px, 1.8vw, 14px); margin: 0 0 6px 0; color: #fff; line-height: 1.3;">FIN DE LA POBREZA</h2>
+            <div id="complete-stats" style="font-size: 7px; color: #f0f0f0;">RECURSOS: 3/3 • TIEMPO: 00:00 • REINTENTOS: 0</div>
+          </div>
+        </div>
+
+        <div class="edu-section">
+          <div class="edu-section-title">¿QUÉ ES ESTE ODS?</div>
+          <p id="edu-what" class="edu-section-text"></p>
+        </div>
+
+        <div class="edu-section">
+          <div class="edu-section-title">DATO CLAVE / IMPACTO AGENDA 2030</div>
+          <p id="edu-fact" class="edu-section-text"></p>
+        </div>
+
+        <div class="edu-section">
+          <div class="edu-section-title">¿CÓMO PUEDES AYUDAR TÚ?</div>
+          <ul id="edu-tips" class="edu-actions-list"></ul>
+        </div>
+
+        <div class="btn-group" style="margin-bottom: 0; margin-top: 2px;">
+          <button id="next-lvl-btn" class="retro-btn primary" onclick="nextLevel()">SIGUIENTE NIVEL (ODS 2) ►</button>
+          <button id="retry-lvl-btn" class="retro-btn" onclick="retryLevel()">REPETIR</button>
+          <button class="retro-btn secondary" onclick="showLevelSelect()">MENÚ DE NIVELES</button>
+        </div>
+        <div style="text-align: center; font-size: 7px; color: #9090b8;">
+          PULSA [ENTER] O [ESPACIO] PARA CONTINUAR
+        </div>
+      </div>
+    </div>
+
+    <!-- Pantalla de Victoria Final (17 ODS) -->
+    <div id="victory-screen" class="overlay hidden">
+      <h1 style="color: #ffea00;">¡AGENDA 2030 CUMPLIDA!</h1>
+      <p class="subtitle">
+        Has completado los 17 Objetivos de Desarrollo Sostenible. ¡Un mundo más justo, verde y sostenible es posible gracias a ti!
+      </p>
+      <div class="btn-group">
+        <button class="retro-btn primary" onclick="startGame(0)">JUGAR DE NUEVO</button>
+        <button class="retro-btn secondary" onclick="showLevelSelect()">VER LOS 17 ODS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra inferior de controles e información -->
+  <div id="controls-bar">
+    <div class="key-hints">
+      <span class="key-badge">A/D</span> o <span class="key-badge">◄/►</span> Moverse •
+      <span class="key-badge">W</span> / <span class="key-badge">ESPACIO</span> Saltar •
+      <span class="key-badge">SHIFT</span> / <span class="key-badge">K</span> Dash •
+      <span class="key-badge">R</span> Reiniciar •
+      <span class="key-badge">M</span> Silenciar
+    </div>
+    <div class="bar-actions">
+      <button onclick="toggleMusic()" id="music-btn">AUDIO: ON</button>
+      <button onclick="showLevelSelect()">17 ODS</button>
+      <button onclick="retryLevel()">REINICIAR</button>
+    </div>
+  </div>
+
+  <!-- Botones táctiles -->
+  <div id="touch-controls">
+    <div class="touch-group">
+      <button class="touch-btn" id="btn-left">◄</button>
+      <button class="touch-btn" id="btn-right">►</button>
+    </div>
+    <div class="touch-group">
+      <button class="touch-btn" id="btn-dash" style="font-size:8px;">DASH</button>
+      <button class="touch-btn" id="btn-jump" style="font-size:8px;">SALTO</button>
+    </div>
+  </div>
+
+<script>
+// --- 1. DEFINICIÓN OFICIAL DE LOS 17 ODS DE LA AGENDA 2030 ---
+const ODS_DATA = [
+  {
+    id: 1, title: "Fin de la pobreza", color: "#E5243B", dark: "#8c1120", bgTop: "#2b0b10", bgBot: "#5c1620",
+    item: "moneda", hazard: "crisis", gimmick: "standard",
+    desc: "Recoge recursos solidarios y supera la brecha económica.",
+    what: "Busca erradicar la pobreza extrema en todo el mundo y garantizar que todas las personas tengan acceso a recursos básicos, vivienda digna y protección social.",
+    fact: "Más de 700 millones de personas aún viven en situación de pobreza extrema con menos de 2,15 dólares al día, afectando especialmente a la infancia.",
+    tips: ["Dona ropa, libros o alimentos en buen estado a bancos solidarios.", "Apoya el comercio justo y a pequeños productores locales.", "Infórmate y sensibiliza sobre las causas de la desigualdad social."]
+  },
+  {
+    id: 2, title: "Hambre cero", color: "#DDA63A", dark: "#8a641b", bgTop: "#2e2208", bgBot: "#664b14",
+    item: "cosecha", hazard: "sequia", gimmick: "bounce",
+    desc: "Recolecta alimentos nutritivos impulsándote en silos agrícolas.",
+    what: "Persigue terminar con todas las formas de hambre y malnutrición, asegurando el acceso universal a alimentos sanos, nutritivos y suficientes mediante agricultura sostenible.",
+    fact: "Alrededor de 735 millones de personas padecen hambre en el mundo mientras se desperdicia cerca de un tercio de todos los alimentos producidos.",
+    tips: ["Planifica tus compras para evitar el desperdicio de comida en casa.", "Consume frutas y verduras de temporada y de proximidad (km 0).", "Colabora con comedores sociales o recogidas de alimentos."]
+  },
+  {
+    id: 3, title: "Salud y bienestar", color: "#4C9F38", dark: "#28591c", bgTop: "#0d2608", bgBot: "#1f5214",
+    item: "corazon", hazard: "virus", gimmick: "patrol",
+    desc: "Esquiva patógenos y recoge botiquines de salud vital.",
+    what: "Garantiza una vida sana y promueve el bienestar físico y mental para todas las personas en todas las edades, asegurando cobertura sanitaria universal.",
+    fact: "Al menos la mitad de la población mundial carece todavía de acceso pleno a servicios de salud esenciales y vacunas básicas.",
+    tips: ["Practica actividad física regular y mantén una alimentación equilibrada.", "Cuida la salud mental descansando bien y apoyando a quienes te rodean.", "Fomenta hábitos de higiene y prevención sanitaria."]
+  },
+  {
+    id: 4, title: "Educación de calidad", color: "#C5192D", dark: "#750c18", bgTop: "#26060a", bgBot: "#521018",
+    item: "libro", hazard: "tinta", gimmick: "wallclimb",
+    desc: "Escala torres del conocimiento y reúne libros del saber.",
+    what: "Asegura una educación inclusiva, equitativa y de calidad, promoviendo oportunidades de aprendizaje durante toda la vida para todas las personas.",
+    fact: "Más de 244 millones de niños y jóvenes en todo el mundo siguen sin estar escolarizados por falta de recursos o conflictos.",
+    tips: ["Comparte tus conocimientos ayudando a compañeros o familiares a estudiar.", "Dona libros de texto o lectura a bibliotecas escolares y comunitarias.", "Defiende el acceso igualitario a la tecnología educativa."]
+  },
+  {
+    id: 5, title: "Igualdad de género", color: "#FF3A21", dark: "#991b0b", bgTop: "#2e0904", bgBot: "#66160b",
+    item: "igualdad", hazard: "barrera", gimmick: "moving",
+    desc: "Equilibra plataformas móviles y rompe techos de cristal.",
+    what: "Logra la igualdad entre los géneros y empodera a todas las mujeres y niñas eliminando cualquier forma de discriminación, violencia o brecha salarial.",
+    fact: "Las mujeres representan menos del 27% de los escaños parlamentarios mundiales y dedican casi el triple de tiempo al trabajo doméstico no remunerado.",
+    tips: ["Reparte de forma equitativa las tareas domésticas y de cuidados.", "Visibiliza y valora los logros de mujeres en la ciencia, el arte y el deporte.", "Rechaza cualquier comentario o actitud sexista en tu entorno."]
+  },
+  {
+    id: 6, title: "Agua limpia y saneamiento", color: "#26BDE2", dark: "#116980", bgTop: "#05232b", bgBot: "#0e4d5e",
+    item: "gota", hazard: "residuo", gimmick: "water",
+    desc: "Salta sobre corrientes puras y evita vertidos contaminantes.",
+    what: "Garantiza la disponibilidad de agua dulce, su gestión sostenible y el saneamiento seguro para todas las personas, protegiendo los ecosistemas acuáticos.",
+    fact: "Más de 2.200 millones de personas carecen de acceso a servicios de agua potable gestionados de forma segura.",
+    tips: ["Cierra el grifo mientras te cepillas los dientes o enjabonas los platos.", "Toma duchas cortas en lugar de baños para ahorrar decenas de litros.", "Nunca arrojes aceites, toallitas ni químicos por el desagüe."]
+  },
+  {
+    id: 7, title: "Energía asequible y no contaminante", color: "#FCC30B", dark: "#967203", bgTop: "#291f02", bgBot: "#5e4806",
+    item: "sol", hazard: "humo", gimmick: "wind",
+    desc: "Aprovecha corrientes de turbinas eólicas y paneles solares.",
+    what: "Asegura el acceso a una energía asequible, fiable, sostenible y moderna mediante la transición hacia fuentes renovables como la solar y la eólica.",
+    fact: "El sector energético es responsable de alrededor del 73% de las emisiones mundiales de gases de efecto invernadero.",
+    tips: ["Apaga las luces y desconecta aparatos electrónicos que no estés usando.", "Aprovecha al máximo la luz natural y utiliza bombillas LED.", "Prioriza medios de transporte sostenibles o compartidos."]
+  },
+  {
+    id: 8, title: "Trabajo decente y crecimiento económico", color: "#A21942", dark: "#5c0b23", bgTop: "#21050d", bgBot: "#4a0d1f",
+    item: "engranaje", hazard: "chispa", gimmick: "conveyor",
+    desc: "Avanza por infraestructuras dignas con precisión y ritmo.",
+    what: "Promueve el crecimiento económico inclusivo y sostenible, el empleo pleno y productivo y el trabajo decente con derechos laborales para todos.",
+    fact: "Cerca de 2.000 millones de trabajadores en el mundo tienen empleos informales sin protección social ni seguridad laboral.",
+    tips: ["Compra productos de empresas que respeten los derechos laborales.", "Fomenta el emprendimiento ético y la economía circular.", "Apoya la formación continua y el talento joven."]
+  },
+  {
+    id: 9, title: "Industria, innovación e infraestructura", color: "#FD6925", dark: "#99390d", bgTop: "#2b1004", bgBot: "#61250a",
+    item: "chip", hazard: "laser", gimmick: "dash_gaps",
+    desc: "Usa tu impulso (Dash) para cruzar puentes tecnológicos.",
+    what: "Construye infraestructuras resilientes, promueve la industrialización inclusiva y sostenible y fomenta la innovación tecnológica y científica.",
+    fact: "Aún hay cerca de 2.600 millones de personas en el mundo sin acceso a Internet, limitando su acceso a innovación y educación.",
+    tips: ["Alarga la vida útil de tus dispositivos electrónicos reparándolos.", "Apoya proyectos científicos y tecnológicos con impacto ambiental positivo.", "Utiliza el transporte público y las infraestructuras sostenibles de tu ciudad."]
+  },
+  {
+    id: 10, title: "Reducción de las desigualdades", color: "#DD1367", dark: "#80083a", bgTop: "#260312", bgBot: "#57092a",
+    item: "balanza", hazard: "abismo", gimmick: "bridges",
+    desc: "Construye puentes de inclusión sobre grandes desniveles.",
+    what: "Reduce la desigualdad dentro de los países y entre ellos, promoviendo la inclusión social, económica y política de todas las personas sin excepción.",
+    fact: "El 10% más rico de la población mundial concentra más del 52% de los ingresos globales, mientras el 50% más pobre recibe apenas el 8,5%.",
+    tips: ["Trata con respeto e inclusión a personas de cualquier origen o condición.", "Apoya iniciativas comunitarias que integren a colectivos vulnerables.", "Denuncia la discriminación y promueve espacios accesibles para todos."]
+  },
+  {
+    id: 11, title: "Ciudades y comunidades sostenibles", color: "#FD9D24", dark: "#995a0b", bgTop: "#291803", bgBot: "#5c3608",
+    item: "bici", hazard: "trafico", gimmick: "rooftops",
+    desc: "Haz parkour urbano entre azoteas verdes y transporte limpio.",
+    what: "Logra que las ciudades y los asentamientos humanos sean inclusivos, seguros, resilientes y sostenibles, con zonas verdes y aire limpio.",
+    fact: "Las ciudades ocupan solo el 3% de la superficie terrestre, pero representan más del 70% de las emisiones globales de carbono.",
+    tips: ["Desplázate a pie, en bicicleta o en transporte público siempre que puedas.", "Cuida los parques, jardines y mobiliario urbano de tu barrio.", "Participa en iniciativas vecinales de limpieza o huertos urbanos."]
+  },
+  {
+    id: 12, title: "Producción y consumo responsables", color: "#BF8B2E", dark: "#704f15", bgTop: "#241906", bgBot: "#4f380f",
+    item: "reciclar", hazard: "basura", gimmick: "crumbling",
+    desc: "Pisa plataformas reciclables que ceden tras un instante.",
+    what: "Garantiza modalidades de consumo y producción sostenibles, haciendo más y mejor con menos recursos y reduciendo residuos.",
+    fact: "Cada año se extraen más de 90.000 millones de toneladas de recursos naturales, triplicando la cifra de hace 50 años.",
+    tips: ["Aplica las 3R: Reduce, Reutiliza y Recicla correctamente cada envase.", "Evita plásticos de un solo uso llevando tu propia bolsa y botella.", "Elige productos duraderos y reparables frente al consumo rápido."]
+  },
+  {
+    id: 13, title: "Acción por el clima", color: "#3F7E44", dark: "#214724", bgTop: "#0a1c0b", bgBot: "#183d1b",
+    item: "planeta", hazard: "fuego", gimmick: "wind_storm",
+    desc: "Supera ráfagas climáticas extremas y enfría el planeta.",
+    what: "Adopta medidas urgentes para combatir el cambio climático y sus efectos, reduciendo emisiones y fortaleciendo la resiliencia ante fenómenos extremos.",
+    fact: "La última década ha sido la más cálida jamás registrada, acelerando el deshielo polar y los eventos meteorológicos extremos.",
+    tips: ["Reduce tu huella de carbono ahorrando energía y evitando vuelos innecesarios.", "Planta árboles o apoya proyectos de reforestación local.", "Infórmate con fuentes científicas y exige políticas climáticas ambiciosas."]
+  },
+  {
+    id: 14, title: "Vida submarina", color: "#0A97D9", dark: "#055378", bgTop: "#031b29", bgBot: "#083c59",
+    item: "pez", hazard: "plastico", gimmick: "low_grav",
+    desc: "Flota en corrientes oceánicas esquivando microplásticos.",
+    what: "Conserva y utiliza de forma sostenible los océanos, los mares y los recursos marinos, frenando la contaminación y la sobrepesca.",
+    fact: "Cada año llegan más de 11 millones de toneladas de plástico a los océanos, dañando gravemente a tortugas, aves y peces.",
+    tips: ["No dejes ningún residuo en playas, ríos ni espacios naturales.", "Reduce al mínimo el consumo de plásticos desechables.", "Consume pescado procedente de pesca sostenible certificada."]
+  },
+  {
+    id: 15, title: "Vida de ecosistemas terrestres", color: "#56C02B", dark: "#2e6e14", bgTop: "#0c2105", bgBot: "#1e4a0c",
+    item: "arbol", hazard: "tala", gimmick: "canopy",
+    desc: "Salta de copa en copa reforestando el bosque nativo.",
+    what: "Protege, restablece y promueve el uso sostenible de los ecosistemas terrestres, gestiona los bosques y detiene la pérdida de biodiversidad.",
+    fact: "Cada año desaparecen alrededor de 10 millones de hectáreas de bosque, poniendo en peligro de extinción a un millón de especies.",
+    tips: ["Respeta la flora y la fauna cuando visites montañas y parques naturales.", "Usa papel reciclado y productos con certificación forestal (FSC).", "Prevén incendios forestales no encendiendo fuego ni dejando vidrios."]
+  },
+  {
+    id: 16, title: "Paz, justicia e instituciones sólidas", color: "#00689D", dark: "#003957", bgTop: "#02131f", bgBot: "#052a40",
+    item: "paloma", hazard: "trampa", gimmick: "precision",
+    desc: "Supera pruebas de equilibrio con calma y determinación.",
+    what: "Promueve sociedades pacíficas e inclusivas para el desarrollo sostenible, facilita el acceso a la justicia para todos y crea instituciones eficaces y transparentes.",
+    fact: "Más de 110 millones de personas en el mundo se han visto desplazadas por conflictos armados, persecución y violencia.",
+    tips: ["Resuelve los conflictos cotidianos mediante el diálogo y la empatía.", "Participa activamente en tu comunidad escolar o vecinal con respeto.", "Defiende la verdad, la transparencia y los derechos humanos."]
+  },
+  {
+    id: 17, title: "Alianzas para lograr los objetivos", color: "#19486A", dark: "#0c2638", bgTop: "#06111a", bgBot: "#0f2b40",
+    item: "alianza", hazard: "caos", gimmick: "finale",
+    desc: "¡El gran desafío final! Combina todas tus habilidades de parkour.",
+    what: "Fortalece los medios de ejecución y revitaliza la Alianza Mundial para el Desarrollo Sostenible uniendo gobiernos, empresas, ciencia y ciudadanía.",
+    fact: "Ningún país ni persona puede alcanzar los 17 ODS en solitario: la cooperación global y local es la clave para cumplir la Agenda 2030.",
+    tips: ["Trabaja en equipo y colabora con asociaciones o voluntariados locales.", "Comparte lo aprendido sobre los 17 ODS con amigos y familia.", "Convierte cada pequeña acción diaria en un compromiso permanente."]
+  }
+];
+
+// --- 2. MOTOR DE AUDIO CHIPTUNE 8-BITS ---
+class ChiptuneAudio {
+  constructor() {
+    this.ctx = null;
+    this.enabled = true;
+  }
+  init() {
+    if (!this.ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) this.ctx = new AudioCtx();
+    }
+    if (this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+  tone(freq, type, dur, vol = 0.09, slide = null) {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+    if (slide) {
+      osc.frequency.exponentialRampToValueAtTime(slide, this.ctx.currentTime + dur);
+    }
+    gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + dur);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + dur);
+  }
+  jump(dbl = false) { this.tone(dbl ? 360 : 230, 'square', 0.13, 0.08, dbl ? 640 : 450); }
+  dash() { this.tone(540, 'sawtooth', 0.11, 0.08, 150); }
+  bounce() { this.tone(190, 'triangle', 0.22, 0.14, 700); }
+  collect() {
+    this.tone(587.33, 'square', 0.08, 0.09);
+    setTimeout(() => this.tone(880, 'square', 0.14, 0.09), 65);
+  }
+  hurt() { this.tone(210, 'sawtooth', 0.24, 0.12, 65); }
+  win() {
+    [523.25, 659.25, 783.99, 1046.50].forEach((n, i) => {
+      setTimeout(() => this.tone(n, 'square', 0.18, 0.1), i * 95);
+    });
+  }
+  startMusic() { this.init(); }
+}
+
+const audio = new ChiptuneAudio();
+
+function toggleMusic() {
+  audio.enabled = !audio.enabled;
+  const btn = document.getElementById('music-btn');
+  if (btn) btn.textContent = `AUDIO: ${audio.enabled ? 'ON' : 'OFF'}`;
+}
+
+// --- 3. VARIABLES GLOBALES DEL JUEGO ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = 'MENU'; // MENU, LEVEL_SELECT, PLAYING, LEVEL_COMPLETE, EDU_VIEW, VICTORY
+let currentLevelIdx = 0;
+let completedLevels = [];
+try {
+  completedLevels = JSON.parse(localStorage.getItem('ods2030_completed') || '[]');
+} catch (e) {
+  completedLevels = [];
+}
+
+let level = null;
+let player = null;
+let particles = [];
+let camera = { x: 0, y: 0 };
+let frameCount = 0;
+let screenShake = 0;
+let levelStartTime = 0;
+let levelDeaths = 0;
+
+const keys = {
+  left: false,
+  right: false,
+  up: false,
+  upPressed: false,
+  dash: false,
+  dashPressed: false
+};
+
+// --- 4. CONSTRUCCIÓN DE LOS 17 NIVELES TEMÁTICOS ---
+function buildLevel(idx) {
+  const ods = ODS_DATA[idx];
+  const platforms = [];
+  const hazards = [];
+  const collectibles = [];
+  const windZones = [];
+
+  // Plataforma inicial
+  platforms.push({ x: 0, y: 430, w: 230, h: 110, type: 'solid' });
+
+  const seed = (idx + 1) * 7919 + 104729;
+  const rand = (n) => {
+    const x = Math.sin(seed + n * 19.37) * 10000;
+    return x - Math.floor(x);
+  };
+
+  let curX = 230;
+  let curY = 430;
+  const segments = 10 + Math.floor(idx / 3);
+
+  for (let i = 0; i < segments; i++) {
+    const r = rand(i);
+    let gap = 75 + Math.floor(r * 65);
+    let width = 115 + Math.floor(rand(i + 40) * 85);
+    let deltaY = Math.floor((rand(i + 80) - 0.52) * 125);
+
+    if (ods.gimmick === 'wallclimb' || ods.gimmick === 'rooftops' || ods.gimmick === 'canopy') {
+      deltaY = -42 - Math.floor(rand(i + 15) * 42);
+      if (curY + deltaY < 165) deltaY = 85;
+      gap = 65 + Math.floor(r * 45);
+    } else if (ods.gimmick === 'dash_gaps' || ods.gimmick === 'bridges') {
+      gap = 125 + Math.floor(r * 65);
+      deltaY = Math.floor((rand(i + 25) - 0.5) * 55);
+    } else if (ods.gimmick === 'low_grav') {
+      gap = 110 + Math.floor(r * 65);
+      deltaY = Math.floor((rand(i + 35) - 0.55) * 140);
+    }
+
+    curX += gap;
+    curY = Math.max(175, Math.min(455, curY + deltaY));
+
+    let pType = 'solid';
+    if (ods.gimmick === 'bounce' && i % 3 === 1) pType = 'bounce';
+    if (ods.gimmick === 'crumbling' && i % 2 === 1) pType = 'crumble';
+    if (ods.gimmick === 'moving' && i % 2 === 1) pType = 'moving';
+    if (ods.gimmick === 'conveyor' && i % 2 === 1) pType = 'conveyor';
+    if (ods.gimmick === 'finale') {
+      const cycle = ['solid', 'bounce', 'moving', 'crumble', 'solid'];
+      pType = cycle[i % cycle.length];
+    }
+
+    platforms.push({
+      x: curX,
+      y: curY,
+      w: width,
+      h: pType === 'bounce' ? 24 : 28,
+      type: pType,
+      baseX: curX,
+      baseY: curY,
+      dx: 0,
+      moveRange: pType === 'moving' ? 60 : 0,
+      moveSpeed: 0.03 + (i % 3) * 0.01,
+      moveAxis: i % 4 === 1 ? 'x' : 'y',
+      crumbleTimer: 0,
+      broken: false
+    });
+
+    // Muros para Wall-Jump
+    if ((ods.gimmick === 'wallclimb' || ods.gimmick === 'precision' || ods.gimmick === 'finale') && i % 3 === 2) {
+      platforms.push({
+        x: curX + width - 24,
+        y: curY - 130,
+        w: 24,
+        h: 130,
+        type: 'solid'
+      });
+      curY -= 75;
+    }
+
+    // Corrientes ascendentes de viento o agua
+    if ((ods.gimmick === 'wind' || ods.gimmick === 'wind_storm' || ods.gimmick === 'water' || (ods.gimmick === 'finale' && i === 6)) && i % 3 === 1) {
+      windZones.push({
+        x: curX - gap + 10,
+        y: 110,
+        w: Math.max(40, gap - 20),
+        h: 420,
+        forceY: ods.gimmick === 'water' ? -0.52 : -0.68,
+        isWater: ods.gimmick === 'water'
+      });
+    }
+
+    // Obstáculos temáticos
+    if (width >= 145 && pType === 'solid' && i > 0 && i < segments - 1 && rand(i + 150) > 0.48) {
+      hazards.push({
+        x: curX + Math.floor(width / 2) - 16,
+        y: curY - 18,
+        w: 32,
+        h: 18
+      });
+    }
+
+    // 5 ítems coleccionables por nivel
+    if (i % 2 === 1 && collectibles.length < 5) {
+      collectibles.push({
+        x: curX + Math.floor(width / 2),
+        y: curY - 44,
+        r: 11,
+        collected: false
+      });
+    }
+
+    curX += width;
+  }
+
+  // Plataforma final de meta
+  curX += 85;
+  curY = Math.max(220, Math.min(430, curY));
+  platforms.push({ x: curX, y: curY, w: 220, h: 120, type: 'solid' });
+
+  const goal = {
+    x: curX + 120,
+    y: curY - 96,
+    w: 44,
+    h: 96
+  };
+
+  return {
+    idx,
+    ods,
+    platforms,
+    hazards,
+    collectibles,
+    windZones,
+    goal,
+    width: curX + 260
+  };
+}
+
+function createPlayer() {
+  const ods = ODS_DATA[currentLevelIdx];
+  return {
+    x: 50,
+    y: 340,
+    w: 26,
+    h: 34,
+    vx: 0,
+    vy: 0,
+    speed: 4.5,
+    jumpForce: ods.gimmick === 'low_grav' ? -9.5 : -10.8,
+    gravity: ods.gimmick === 'low_grav' ? 0.32 : 0.52,
+    grounded: false,
+    jumpsLeft: 2,
+    onWall: 0,
+    dashTimer: 0,
+    dashCooldown: 0,
+    facing: 1,
+    coyoteTimer: 0,
+    invuln: 0,
+    trail: []
+  };
+}
+
+function spawnParticles(x, y, color, count, speed = 4) {
+  for (let i = 0; i < count; i++) {
+    particles.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * speed * 1.5,
+      vy: (Math.random() - 0.5) * speed * 1.5 - 1,
+      size: 3 + Math.floor(Math.random() * 4),
+      color,
+      life: 18 + Math.floor(Math.random() * 14)
+    });
+  }
+}
+
+// --- 5. GESTIÓN DE PANTALLAS Y FLUJO ---
+function hideAllOverlays() {
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('level-select-screen').classList.add('hidden');
+  document.getElementById('level-complete-screen').classList.add('hidden');
+  document.getElementById('victory-screen').classList.add('hidden');
+}
+
+function showStartScreen() {
+  gameState = 'MENU';
+  hideAllOverlays();
+  document.getElementById('start-screen').classList.remove('hidden');
+}
+
+function showLevelSelect() {
+  gameState = 'LEVEL_SELECT';
+  hideAllOverlays();
+  renderLevelGrid();
+  document.getElementById('level-select-screen').classList.remove('hidden');
+}
+
+function startGame(idx) {
+  loadLevel(idx);
+}
+
+function loadLevel(idx) {
+  currentLevelIdx = idx;
+  level = buildLevel(idx);
+  player = createPlayer();
+  particles = [];
+  camera = { x: 0, y: 0 };
+  levelStartTime = Date.now();
+  levelDeaths = 0;
+  gameState = 'PLAYING';
+  hideAllOverlays();
+  audio.startMusic();
+}
+
+function retryLevel() {
+  loadLevel(currentLevelIdx);
+}
+
+function respawnPlayer() {
+  audio.hurt();
+  levelDeaths++;
+  screenShake = 10;
+  spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#ff334b', 16, 3.5);
+  level.platforms.forEach(p => {
+    if (p.type === 'crumble') {
+      p.broken = false;
+      p.crumbleTimer = 0;
+    }
+  });
+  player.x = 50;
+  player.y = 320;
+  player.vx = 0;
+  player.vy = 0;
+  player.invuln = 45;
+  camera.x = 0;
+}
+
+// --- 6. EMBLEMA 8-BITS Y MODAL EDUCATIVO ---
+function drawOdsEmblem(ods) {
+  const iconCanvas = document.getElementById('odsIconCanvas');
+  if (!iconCanvas) return;
+  const ictx = iconCanvas.getContext('2d');
+  ictx.clearRect(0, 0, 32, 32);
+
+  ictx.fillStyle = ods.color;
+  ictx.fillRect(2, 2, 28, 28);
+  ictx.fillStyle = '#ffffff';
+
+  switch (ods.id) {
+    case 1:
+      ictx.fillRect(6, 10, 4, 4); ictx.fillRect(5, 15, 6, 9);
+      ictx.fillRect(14, 8, 4, 4); ictx.fillRect(13, 13, 6, 11);
+      ictx.fillRect(22, 10, 4, 4); ictx.fillRect(21, 15, 6, 9);
+      break;
+    case 2:
+      ictx.fillRect(6, 16, 20, 4); ictx.fillRect(8, 20, 16, 4);
+      ictx.fillRect(10, 8, 2, 6); ictx.fillRect(15, 6, 2, 8); ictx.fillRect(20, 8, 2, 6);
+      break;
+    case 3:
+      ictx.fillRect(7, 9, 6, 6); ictx.fillRect(19, 9, 6, 6);
+      ictx.fillRect(5, 12, 22, 6); ictx.fillRect(8, 18, 16, 4);
+      ictx.fillRect(12, 22, 8, 3); ictx.fillRect(15, 25, 2, 2);
+      break;
+    case 4:
+      ictx.fillRect(5, 8, 10, 16); ictx.fillRect(17, 8, 10, 16);
+      ictx.fillStyle = ods.color;
+      ictx.fillRect(7, 11, 6, 2); ictx.fillRect(7, 15, 6, 2);
+      ictx.fillRect(19, 11, 6, 2); ictx.fillRect(19, 15, 6, 2);
+      break;
+    case 5:
+      ictx.fillRect(10, 6, 12, 3); ictx.fillRect(10, 15, 12, 3);
+      ictx.fillRect(8, 8, 3, 8); ictx.fillRect(21, 8, 3, 8);
+      ictx.fillRect(14, 18, 4, 9); ictx.fillRect(11, 22, 10, 3);
+      break;
+    case 6:
+      ictx.fillRect(15, 5, 2, 4); ictx.fillRect(13, 9, 6, 4);
+      ictx.fillRect(10, 13, 12, 5); ictx.fillRect(9, 18, 14, 6);
+      ictx.fillRect(12, 24, 8, 3);
+      break;
+    case 7:
+      ictx.fillRect(11, 11, 10, 10);
+      ictx.fillRect(15, 4, 2, 5); ictx.fillRect(15, 23, 2, 5);
+      ictx.fillRect(4, 15, 5, 2); ictx.fillRect(23, 15, 5, 2);
+      break;
+    case 8:
+      ictx.fillRect(6, 20, 4, 6); ictx.fillRect(12, 15, 4, 11);
+      ictx.fillRect(18, 11, 4, 15); ictx.fillRect(24, 6, 4, 20);
+      break;
+    case 9:
+      ictx.fillRect(11, 6, 10, 8);
+      ictx.fillRect(6, 16, 9, 9); ictx.fillRect(17, 16, 9, 9);
+      break;
+    case 10:
+      ictx.fillRect(7, 10, 18, 4); ictx.fillRect(7, 18, 18, 4);
+      break;
+    case 11:
+      ictx.fillRect(5, 13, 6, 14); ictx.fillRect(13, 7, 7, 20); ictx.fillRect(22, 11, 5, 16);
+      break;
+    case 12:
+      ictx.fillRect(5, 11, 9, 10); ictx.fillRect(18, 11, 9, 10);
+      ictx.fillRect(13, 14, 6, 4);
+      ictx.fillStyle = ods.color;
+      ictx.fillRect(8, 14, 4, 4); ictx.fillRect(20, 14, 4, 4);
+      break;
+    case 13:
+      ictx.fillRect(9, 7, 14, 18); ictx.fillRect(7, 9, 18, 14);
+      ictx.fillStyle = ods.color;
+      ictx.fillRect(11, 10, 5, 5); ictx.fillRect(17, 16, 5, 6);
+      break;
+    case 14:
+      ictx.fillRect(8, 11, 12, 8); ictx.fillRect(20, 9, 4, 12);
+      ictx.fillRect(6, 23, 20, 2);
+      break;
+    case 15:
+      ictx.fillRect(9, 6, 14, 12); ictx.fillRect(7, 9, 18, 8);
+      ictx.fillRect(14, 18, 4, 9);
+      break;
+    case 16:
+      ictx.fillRect(10, 13, 12, 7); ictx.fillRect(18, 9, 5, 5);
+      ictx.fillRect(7, 11, 5, 4); ictx.fillRect(13, 8, 4, 5);
+      break;
+    case 17:
+      ictx.fillRect(13, 5, 6, 4); ictx.fillRect(13, 23, 6, 4);
+      ictx.fillRect(5, 13, 4, 6); ictx.fillRect(23, 13, 4, 6);
+      ictx.fillRect(8, 8, 4, 4); ictx.fillRect(20, 8, 4, 4);
+      ictx.fillRect(8, 20, 4, 4); ictx.fillRect(20, 20, 4, 4);
+      break;
+  }
+}
+
+function populateEducationalModal(idx, isFromMenu = false) {
+  const ods = ODS_DATA[idx];
+  drawOdsEmblem(ods);
+
+  document.getElementById('edu-header-box').style.backgroundColor = ods.color;
+  document.getElementById('edu-card-box').style.borderColor = ods.color;
+
+  const badge = document.getElementById('complete-badge');
+  badge.textContent = isFromMenu ? `FICHA EDUCATIVA • ODS ${ods.id}` : `¡ODS ${ods.id} COMPLETADO!`;
+
+  document.getElementById('complete-title').textContent = ods.title.toUpperCase();
+
+  const statsEl = document.getElementById('complete-stats');
+  if (isFromMenu) {
+    statsEl.textContent = `OBJETIVO ${ods.id} DE 17 • AGENDA 2030 PARA EL DESARROLLO SOSTENIBLE`;
+  } else {
+    const collectedCount = level.collectibles.filter(c => c.collected).length;
+    const totalCount = level.collectibles.length;
+    const elapsedSec = Math.max(1, Math.floor((Date.now() - levelStartTime) / 1000));
+    const mins = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+    const secs = String(elapsedSec % 60).padStart(2, '0');
+    statsEl.textContent = `RECURSOS: ${collectedCount}/${totalCount} • TIEMPO: ${mins}:${secs} • REINTENTOS: ${levelDeaths}`;
+  }
+
+  document.getElementById('edu-what').textContent = ods.what;
+  document.getElementById('edu-fact').textContent = ods.fact;
+
+  const tipsList = document.getElementById('edu-tips');
+  tipsList.innerHTML = '';
+  ods.tips.forEach(tip => {
+    const li = document.createElement('li');
+    li.textContent = tip;
+    tipsList.appendChild(li);
+  });
+
+  const nextBtn = document.getElementById('next-lvl-btn');
+  const retryBtn = document.getElementById('retry-lvl-btn');
+
+  if (isFromMenu) {
+    nextBtn.textContent = `JUGAR ODS ${ods.id} ►`;
+    nextBtn.onclick = () => startGame(idx);
+    retryBtn.classList.add('hidden');
+  } else {
+    retryBtn.classList.remove('hidden');
+    if (idx < 16) {
+      nextBtn.textContent = `SIGUIENTE NIVEL (ODS ${ods.id + 1}) ►`;
+      nextBtn.onclick = () => nextLevel();
+    } else {
+      nextBtn.textContent = `VER RESUMEN FINAL 2030 ★`;
+      nextBtn.onclick = () => showVictoryScreen();
+    }
+  }
+
+  document.getElementById('level-complete-screen').classList.remove('hidden');
+}
+
+function showVictoryScreen() {
+  gameState = 'VICTORY';
+  hideAllOverlays();
+  document.getElementById('victory-screen').classList.remove('hidden');
+}
+
+function nextLevel() {
+  if (currentLevelIdx < 16) {
+    startGame(currentLevelIdx + 1);
+  } else {
+    showVictoryScreen();
+  }
+}
+
+function completeCurrentLevel() {
+  audio.win();
+  spawnParticles(level.goal.x + 18, level.goal.y + 28, '#ffea00', 25, 4);
+
+  if (!completedLevels.includes(currentLevelIdx)) {
+    completedLevels.push(currentLevelIdx);
+    try {
+      localStorage.setItem('ods2030_completed', JSON.stringify(completedLevels));
+    } catch (e) {}
+  }
+
+  gameState = 'LEVEL_COMPLETE';
+  populateEducationalModal(currentLevelIdx, false);
+}
+
+function renderLevelGrid() {
+  const grid = document.getElementById('level-grid');
+  grid.innerHTML = '';
+
+  ODS_DATA.forEach((ods, index) => {
+    const card = document.createElement('div');
+    card.className = 'lvl-card';
+    card.style.backgroundColor = ods.color;
+
+    const isDone = completedLevels.includes(index);
+    card.innerHTML = `
+      ${isDone ? '<span class="lvl-star">★</span>' : ''}
+      <div class="lvl-num">${ods.id}</div>
+      <div class="lvl-name">${ods.title.toUpperCase()}</div>
+      ${isDone ? `<button class="lvl-info-btn" data-info="${index}">FICHA ODS</button>` : ''}
+    `;
+    card.onclick = (e) => {
+      if (e.target && e.target.dataset && e.target.dataset.info !== undefined) {
+        e.stopPropagation();
+        openOdsInfoFromMenu(Number(e.target.dataset.info));
+        return;
+      }
+      startGame(index);
+    };
+    grid.appendChild(card);
+  });
+}
+
+function openOdsInfoFromMenu(idx) {
+  currentLevelIdx = idx;
+  gameState = 'EDU_VIEW';
+  hideAllOverlays();
+  populateEducationalModal(idx, true);
+}
+
+// --- 7. FÍSICAS Y BUCLE PRINCIPAL ---
+function rectsOverlap(a, b) {
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+  );
+}
+
+function update() {
+  frameCount++;
+  if (screenShake > 0) screenShake--;
+  if (gameState !== 'PLAYING' || !level || !player) return;
+
+  // Plataformas móviles y quebradizas
+  level.platforms.forEach(p => {
+    if (p.type === 'moving') {
+      const offset = Math.sin(frameCount * p.moveSpeed) * p.moveRange;
+      if (p.moveAxis === 'x') {
+        p.dx = (p.baseX + offset) - p.x;
+        p.x = p.baseX + offset;
+      } else {
+        p.y = p.baseY + offset;
+      }
+    }
+    if (p.type === 'crumble' && p.crumbleTimer > 0 && !p.broken) {
+      p.crumbleTimer--;
+      if (p.crumbleTimer === 0) {
+        p.broken = true;
+        spawnParticles(p.x + p.w / 2, p.y + 10, '#bf8b2e', 10);
+      }
+    }
+  });
+
+  // Salto y doble salto
+  if (keys.upPressed) {
+    keys.upPressed = false;
+    if (player.grounded || player.coyoteTimer > 0) {
+      player.vy = player.jumpForce;
+      player.grounded = false;
+      player.coyoteTimer = 0;
+      player.jumpsLeft = 1;
+      spawnParticles(player.x + player.w / 2, player.y + player.h, '#ffffff', 6);
+      audio.jump(false);
+    } else if (player.onWall !== 0) {
+      player.vy = player.jumpForce * 0.96;
+      player.vx = -player.onWall * 6.5;
+      player.facing = -player.onWall;
+      player.jumpsLeft = 1;
+      spawnParticles(player.x + (player.onWall === 1 ? player.w : 0), player.y + 16, '#fcc30b', 8);
+      audio.jump(true);
+    } else if (player.jumpsLeft > 0) {
+      player.vy = player.jumpForce * 0.92;
+      player.jumpsLeft--;
+      spawnParticles(player.x + player.w / 2, player.y + player.h, level.ods.color, 8);
+      audio.jump(true);
+    }
+  }
+
+  // Dash
+  if (keys.dashPressed) {
+    keys.dashPressed = false;
+    if (player.dashCooldown <= 0 && player.dashTimer <= 0) {
+      player.dashTimer = 10;
+      player.dashCooldown = 35;
+      player.vx = player.facing * 12.5;
+      player.vy = 0;
+      spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#26bde2', 10);
+      audio.dash();
+    }
+  }
+
+  if (player.dashTimer > 0) {
+    player.dashTimer--;
+    player.trail.push({ x: player.x, y: player.y, alpha: 0.7 });
+  } else {
+    let moveDir = 0;
+    if (keys.left) moveDir -= 1;
+    if (keys.right) moveDir += 1;
+
+    if (moveDir !== 0) {
+      player.vx += moveDir * 0.85;
+      if (Math.abs(player.vx) > player.speed) player.vx = moveDir * player.speed;
+      player.facing = moveDir;
+    } else {
+      player.vx *= 0.76;
+      if (Math.abs(player.vx) < 0.1) player.vx = 0;
+    }
+
+    player.vy += player.gravity;
+    if (player.vy > 13) player.vy = 13;
+  }
+
+  if (player.dashCooldown > 0) player.dashCooldown--;
+  if (player.invuln > 0) player.invuln--;
+
+  // Corrientes ascendentes
+  level.windZones.forEach(z => {
+    if (rectsOverlap(player, z)) {
+      player.vy += z.forceY;
+      if (player.vy < -7.5) player.vy = -7.5;
+      player.jumpsLeft = 1;
+    }
+  });
+
+  // Colisión Horizontal
+  player.x += player.vx;
+  if (player.x < 0) { player.x = 0; player.vx = 0; }
+  player.onWall = 0;
+
+  level.platforms.forEach(p => {
+    if (p.broken) return;
+    if (rectsOverlap(player, p)) {
+      if (player.vx > 0) {
+        player.x = p.x - player.w;
+        player.vx = 0;
+        if (!player.grounded) player.onWall = 1;
+      } else if (player.vx < 0) {
+        player.x = p.x + p.w;
+        player.vx = 0;
+        if (!player.grounded) player.onWall = -1;
+      }
+    }
+  });
+
+  if (player.onWall !== 0 && player.vy > 2.2) player.vy = 2.2;
+
+  // Colisión Vertical
+  const wasGrounded = player.grounded;
+  player.grounded = false;
+  player.y += player.vy;
+
+  level.platforms.forEach(p => {
+    if (p.broken) return;
+    if (rectsOverlap(player, p)) {
+      if (player.vy > 0) {
+        player.y = p.y - player.h;
+        if (p.type === 'bounce') {
+          player.vy = -15.2;
+          player.jumpsLeft = 2;
+          audio.bounce();
+          spawnParticles(player.x + player.w / 2, p.y, '#56c02b', 10);
+        } else {
+          player.vy = 0;
+          player.grounded = true;
+          player.jumpsLeft = 2;
+          if (p.type === 'moving' && p.dx) player.x += p.dx;
+          if (p.type === 'conveyor') player.x += 1.4;
+          if (p.type === 'crumble' && p.crumbleTimer === 0) p.crumbleTimer = 28;
+        }
+      } else if (player.vy < 0) {
+        player.y = p.y + p.h;
+        player.vy = 0;
+      }
+    }
+  });
+
+  if (wasGrounded && !player.grounded && player.vy >= 0) {
+    player.coyoteTimer = 7;
+  } else if (player.coyoteTimer > 0) {
+    player.coyoteTimer--;
+  }
+
+  // Caída al abismo
+  if (player.y > canvas.height + 60) {
+    respawnPlayer();
+    return;
+  }
+
+  // Peligros
+  if (player.invuln <= 0) {
+    for (const h of level.hazards) {
+      if (rectsOverlap(player, h)) {
+        respawnPlayer();
+        return;
+      }
+    }
+  }
+
+  // Coleccionables
+  level.collectibles.forEach(c => {
+    if (!c.collected) {
+      const box = { x: c.x - c.r, y: c.y - c.r, w: c.r * 2, h: c.r * 2 };
+      if (rectsOverlap(player, box)) {
+        c.collected = true;
+        audio.collect();
+        spawnParticles(c.x, c.y, '#fcc30b', 12);
+      }
+    }
+  });
+
+  // Meta del nivel
+  if (rectsOverlap(player, level.goal)) {
+    completeCurrentLevel();
+    return;
+  }
+
+  // Cámara suave
+  const targetCam = player.x - canvas.width * 0.34;
+  camera.x += (targetCam - camera.x) * 0.12;
+  camera.x = Math.max(0, Math.min(level.width - canvas.width, camera.x));
+
+  // Actualizar partículas
+  particles.forEach(pt => {
+    pt.x += pt.vx;
+    pt.y += pt.vy;
+    pt.life--;
+  });
+  particles = particles.filter(pt => pt.life > 0);
+  player.trail.forEach(t => t.alpha -= 0.08);
+  player.trail = player.trail.filter(t => t.alpha > 0);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const lvl = level || buildLevel(0);
+  const ods = lvl.ods;
+
+  // Fondo degradado 8-bits
+  const bands = 8;
+  for (let i = 0; i < bands; i++) {
+    ctx.fillStyle = i % 2 === 0 ? ods.bgTop : ods.bgBot;
+    ctx.fillRect(0, (canvas.height / bands) * i, canvas.width, canvas.height / bands + 1);
+  }
+
+  // Estrellas parallax
+  ctx.fillStyle = 'rgba(255,255,255,0.2)';
+  for (let i = 0; i < 24; i++) {
+    const sx = ((i * 173 - camera.x * 0.25) % canvas.width + canvas.width) % canvas.width;
+    const sy = (i * 89) % 360 + 40;
+    ctx.fillRect(Math.floor(sx), sy, 4, 4);
+  }
+
+  // Horizonte urbano/natural parallax
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  for (let i = 0; i < 14; i++) {
+    const bx = ((i * 190 - camera.x * 0.45) % 1400 + 1400) % 1400 - 120;
+    const bh = 90 + (i % 4) * 45;
+    ctx.fillRect(Math.floor(bx), canvas.height - bh, 95, bh);
+  }
+
+  ctx.save();
+  const shakeX = screenShake > 0 ? (Math.random() - 0.5) * 6 : 0;
+  ctx.translate(-Math.floor(camera.x) + shakeX, 0);
+
+  // Zonas de viento/agua
+  lvl.windZones.forEach(z => {
+    ctx.fillStyle = z.isWater ? 'rgba(38, 189, 226, 0.22)' : 'rgba(252, 195, 11, 0.15)';
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+    ctx.fillStyle = z.isWater ? '#26bde2' : '#fcc30b';
+    for (let k = 0; k < 6; k++) {
+      const py = z.y + ((z.h - ((frameCount * 3 + k * 65) % z.h)));
+      ctx.fillRect(z.x + 10 + (k * 17) % Math.max(10, z.w - 20), py, 4, 14);
+    }
+  });
+
+  // Plataformas
+  lvl.platforms.forEach(p => {
+    if (p.broken) return;
+    const sX = (p.type === 'crumble' && p.crumbleTimer > 0) ? (Math.random() - 0.5) * 4 : 0;
+    ctx.fillStyle = p.type === 'bounce' ? '#3f7e44' : (p.type === 'crumble' ? '#7c581b' : '#1e293b');
+    ctx.fillRect(p.x + sX, p.y, p.w, p.h);
+
+    ctx.fillStyle = p.type === 'bounce' ? '#56c02b' : (p.type === 'moving' ? '#fcc30b' : ods.color);
+    ctx.fillRect(p.x + sX, p.y, p.w, 7);
+
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(p.x + sX, p.y, p.w, p.h);
+  });
+
+  // Peligros
+  lvl.hazards.forEach(h => {
+    ctx.fillStyle = '#ff3a21';
+    const spikes = 3;
+    const sw = h.w / spikes;
+    for (let s = 0; s < spikes; s++) {
+      ctx.beginPath();
+      ctx.moveTo(h.x + s * sw, h.y + h.h);
+      ctx.lineTo(h.x + s * sw + sw / 2, h.y);
+      ctx.lineTo(h.x + (s + 1) * sw, h.y + h.h);
+      ctx.closePath();
+      ctx.fill();
+    }
+  });
+
+  // Coleccionables
+  lvl.collectibles.forEach(c => {
+    if (c.collected) return;
+    const bob = Math.sin(frameCount * 0.1) * 4;
+    ctx.fillStyle = '#fcc30b';
+    ctx.fillRect(c.x - 9, c.y - 9 + bob, 18, 18);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(c.x - 9, c.y - 9 + bob, 18, 18);
+    ctx.fillStyle = ods.color;
+    ctx.fillRect(c.x - 4, c.y - 4 + bob, 8, 8);
+  });
+
+  // Bandera de Meta ODS
+  const g = lvl.goal;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(g.x, g.y, 6, g.h);
+  ctx.fillStyle = ods.color;
+  ctx.fillRect(g.x + 6, g.y + 4, 42, 26);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(g.x + 6, g.y + 4, 42, 26);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 9px "Press Start 2P", monospace';
+  ctx.fillText('ODS', g.x + 12, g.y + 21);
+
+  // Jugador
+  if (player) {
+    player.trail.forEach(t => {
+      ctx.fillStyle = `rgba(38, 189, 226, ${t.alpha})`;
+      ctx.fillRect(t.x, t.y, player.w, player.h);
+    });
+
+    if (player.invuln === 0 || Math.floor(frameCount / 3) % 2 === 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(player.x, player.y, player.w, player.h);
+      ctx.fillStyle = ods.color;
+      ctx.fillRect(player.x, player.y + 12, player.w, 10);
+      ctx.fillStyle = '#0d0e15';
+      const eyeX = player.facing === 1 ? player.x + 15 : player.x + 4;
+      ctx.fillRect(eyeX, player.y + 5, 7, 5);
+    }
+  }
+
+  // Partículas
+  particles.forEach(pt => {
+    ctx.fillStyle = pt.color;
+    ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+  });
+
+  ctx.restore();
+
+  // HUD Superior
+  if (gameState === 'PLAYING' && level) {
+    ctx.fillStyle = 'rgba(13, 14, 21, 0.85)';
+    ctx.fillRect(12, 12, canvas.width - 24, 42);
+    ctx.strokeStyle = ods.color;
+    ctx.lineWidth = 3;
+    ctx.strokeRect(12, 12, canvas.width - 24, 42);
+
+    ctx.fillStyle = ods.color;
+    ctx.fillRect(20, 19, 28, 28);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 10px "Press Start 2P", monospace';
+    ctx.fillText(ods.id < 10 ? `0${ods.id}` : `${ods.id}`, 24, 38);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 10px "Press Start 2P", monospace';
+    ctx.fillText(`ODS ${ods.id}: ${ods.title.toUpperCase()}`, 58, 38);
+
+    const got = level.collectibles.filter(c => c.collected).length;
+    const total = level.collectibles.length;
+    const tSec = Math.floor((Date.now() - levelStartTime) / 1000);
+    ctx.textAlign = 'right';
+    ctx.font = 'bold 9px "Press Start 2P", monospace';
+    ctx.fillStyle = '#fcc30b';
+    ctx.fillText(`★ ${got}/${total} | ${tSec}S`, canvas.width - 24, 38);
+    ctx.textAlign = 'left';
+  }
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+// --- 8. CONTROLES DE TECLADO Y TÁCTILES ---
+window.addEventListener('keydown', (e) => {
+  const code = e.code;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(code)) {
+    e.preventDefault();
+  }
+
+  if ((gameState === 'LEVEL_COMPLETE' || gameState === 'EDU_VIEW') && (code === 'Enter' || code === 'Space')) {
+    e.preventDefault();
+    const nextBtn = document.getElementById('next-lvl-btn');
+    if (nextBtn) nextBtn.click();
+    return;
+  }
+
+  if (code === 'ArrowLeft' || code === 'KeyA') keys.left = true;
+  if (code === 'ArrowRight' || code === 'KeyD') keys.right = true;
+  if (code === 'ArrowUp' || code === 'KeyW' || code === 'Space') {
+    if (!keys.up) keys.upPressed = true;
+    keys.up = true;
+  }
+  if (code === 'ShiftLeft' || code === 'ShiftRight' || code === 'KeyK' || code === 'KeyX') {
+    if (!keys.dash) keys.dashPressed = true;
+    keys.dash = true;
+  }
+  if (code === 'KeyR' && gameState === 'PLAYING') {
+    retryLevel();
+  }
+  if (code === 'KeyM') {
+    toggleMusic();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  const code = e.code;
+  if (code === 'ArrowLeft' || code === 'KeyA') keys.left = false;
+  if (code === 'ArrowRight' || code === 'KeyD') keys.right = false;
+  if (code === 'ArrowUp' || code === 'KeyW' || code === 'Space') {
+    keys.up = false;
+    if (player && player.vy < -4) player.vy *= 0.55;
+  }
+  if (code === 'ShiftLeft' || code === 'ShiftRight' || code === 'KeyK' || code === 'KeyX') {
+    keys.dash = false;
+  }
+});
+
+// Enlazar botones táctiles
+function bindTouch(id, onDown, onUp) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(); });
+  el.addEventListener('touchend', (e) => { e.preventDefault(); if (onUp) onUp(); });
+  el.addEventListener('mousedown', (e) => { e.preventDefault(); onDown(); });
+  el.addEventListener('mouseup', (e) => { e.preventDefault(); if (onUp) onUp(); });
+}
+
+bindTouch('btn-left', () => keys.left = true, () => keys.left = false);
+bindTouch('btn-right', () => keys.right = true, () => keys.right = false);
+bindTouch('btn-jump', () => { keys.upPressed = true; keys.up = true; }, () => { keys.up = false; });
+bindTouch('btn-dash', () => { keys.dashPressed = true; keys.dash = true; }, () => { keys.dash = false; });
+
+window.onload = function () {
+  gameLoop();
+};
+</script>
+</body>
+</html>
